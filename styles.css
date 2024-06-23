@@ -1,0 +1,80 @@
+body {
+    background-color: #fff0f8;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+}
+
+h1 {
+    color: darkblue;
+}
+
+p {
+    color: darkred;
+}
+
+.outer-rounded-corner-page {
+    background-color: white;
+    border-radius: 30px; /* 设置圆角 */
+    padding: 20px;
+    width: 30%;
+    height: 30%;
+    box-shadow: 0px 0px 10px rgba(0,0,0,0.1); /* 增加阴影效果 */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: transform 0.3s; /* 设置动画过渡效果 */
+    text-align: center;
+}
+
+.inner-rounded-corner-page {
+    background-color: #f9f9f9;
+    border-radius: 20px; /* 设置圆角 */
+    padding: 10px;
+    width: 20%;
+    height: 20%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: transform 0.3s; /* 设置动画过渡效果 */
+    box-shadow: 0px 0px 10px rgba(0,0,0,0.1); /* 增加阴影效果 */
+}
+
+.outer-rounded-corner-page:hover {
+    transform: scale(1.05); /* 鼠标悬停时外框放大 */
+}
+.outer-rounded-corner-page:hover .inner-rounded-corner-page {
+    transform: scale(0.5); /* 保持内框的夸张变化 */
+}
+.outer-rounded-corner-page:active {
+    transform: scale(0.95); /* 鼠标点击时外框缩小 */
+}
+
+.inner-rounded-corner-page:hover {
+    transform: scale(1.05); /* 鼠标悬停时内框放大 */
+}
+.inner-rounded-corner-page:active {
+    transform: scale(0.95); /* 鼠标点击时内框缩小 */
+}
+
+.rounded-corner-page a {
+    color: black;
+    text-decoration: none;
+}
+
+a {
+    display: block;
+    color: black;
+    text-decoration: none;
+    transition: transform 0.3s; /* 设置动画过渡效果 */
+}
+
+a:hover .rounded-corner-page {
+    transform: scale(0.95); /* 鼠标悬停时缩小页面 */
+}
+
+a:active .rounded-corner-page {
+    transform: scale(1.05); /* 鼠标点击时放大页面 */
+}
