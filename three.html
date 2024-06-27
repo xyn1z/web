@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Three.js Custom Models</title>
+    <title>Three.js Custom Models with Antialiasing</title>
     <style>
         body { margin: 0; }
         canvas { display: block; }
@@ -12,20 +12,38 @@
 <body>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     <script>
+        // Antialias setting
+        const antialiasLevel = 2; // Change this to adjust the antialiasing level (1 = no antialiasing, 2 = 2x, 3 = 3x, etc.)
+
         // Setup Three.js scene
         const scene = new THREE.Scene();
         const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-        const renderer = new THREE.WebGLRenderer();
+
+        // Enable antialiasing and set up renderer
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setPixelRatio(window.devicePixelRatio * antialiasLevel);
         renderer.setSize(window.innerWidth, window.innerHeight);
+
+        renderer.gammaFactor = 2.2;
+        renderer.outputEncoding = THREE.sRGBEncoding;
+        renderer.shadowMap.enabled = true;
+
         document.body.appendChild(renderer.domElement);
 
-        const light = new THREE.DirectionalLight(0xffffff, 100);
+        const light = new THREE.DirectionalLight(0xffffff,1);
         light.position.set(5, 10, 7.5);
+        light.castShadow = true;
         scene.add(light);
 
         const ambientLight = new THREE.AmbientLight(0x404040); // soft white light
         scene.add(ambientLight);
+
+        // Add OrbitControls
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true; // an animation loop is required when either damping or auto-rotation is enabled
+        controls.dampingFactor = 0.05;
 
         // Load custom models
         const loader = new THREE.GLTFLoader();
@@ -53,6 +71,7 @@
         // Animation loop
         function animate() {
             requestAnimationFrame(animate);
+            controls.update(); // only required if controls.enableDamping = true, or if controls.autoRotate = true
             renderer.render(scene, camera);
         }
 
