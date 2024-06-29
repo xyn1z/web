@@ -48,7 +48,7 @@
 
         document.body.appendChild(renderer.domElement);
 
-        const light = new THREE.DirectionalLight(0x305000, 10);
+        const light = new THREE.DirectionalLight(0x307000, 10);
         light.position.set(5, 10, 7.5);
         light.castShadow = true;
         scene.add(light);
@@ -67,7 +67,7 @@
 
         // Load custom models
         const loader = new THREE.GLTFLoader();
-        const models = ['./1.glb', './2.glb']; // Replace with your model filenames
+        const models = ['./model1.glb', './model2.glb']; // Replace with your model filenames
 
         models.forEach(model => {
             loader.load(model, function(gltf) {
