@@ -144,6 +144,21 @@
         transformControls.addEventListener('dragging-changed', function(event) {
             controls.enabled = !event.value;
         });
+
+        // Add keyboard event listeners to change mode of TransformControls
+        window.addEventListener('keydown', function(event) {
+            switch (event.key) {
+                case 'w': // Translate mode
+                    transformControls.setMode('translate');
+                    break;
+                case 'e': // Rotate mode
+                    transformControls.setMode('rotate');
+                    break;
+                case 'r': // Scale mode
+                    transformControls.setMode('scale');
+                    break;
+            }
+        });
     </script>
 </body>
 </html>
