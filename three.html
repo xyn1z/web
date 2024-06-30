@@ -15,14 +15,10 @@
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/TransformControls.js"></script>
     <script>
-        // Antialias setting
-        const antialiasLevel = 2; // Change this to adjust the antialiasing level (1 = no antialiasing, 2 = 2x, 3 = 3x, etc.)
-
-        // Setup
+        const antialiasLevel = 2;
         const scene = new THREE.Scene();
         const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
 
-        // Enable antialiasing and set up renderer
         const renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setPixelRatio(window.devicePixelRatio * antialiasLevel);
         renderer.setSize(window.innerWidth, window.innerHeight);
@@ -38,23 +34,20 @@
         light.castShadow = true;
         scene.add(light);
 
-        const ambientLight = new THREE.AmbientLight(0x101000); // soft white light
+        const ambientLight = new THREE.AmbientLight(0x101000);
         scene.add(ambientLight);
 
-        // Add OrbitControls
         const controls = new THREE.OrbitControls(camera, renderer.domElement);
-        controls.enableDamping = true; // an animation loop is required when either damping or auto-rotation is enabled
+        controls.enableDamping = true;
         controls.dampingFactor = 0.05;
 
-        // Add TransformControls
         const transformControls = new THREE.TransformControls(camera, renderer.domElement);
         scene.add(transformControls);
 
-        // Load custom models
         const loader = new THREE.GLTFLoader();
-        //const models = ['./model1.glb', './model2.glb']; // Replace with your model filenames
-        const models = ['./model2.glb']; // Replace with your model filenames
+        const models = ['./model2.glb'];
 
+        let mixer;
         models.forEach(model => {
             loader.load(model, function(gltf) {
                 const object = gltf.scene;
@@ -67,12 +60,16 @@
                 scene.add(object);
                 console.log(`Loaded ${model}`);
                 object.userData.draggable = true;
+
+                mixer = new THREE.AnimationMixer(object);
+                gltf.animations.forEach(animation => {
+                    mixer.clipAction(animation).play();
+                });
             }, undefined, function(error) {
                 console.error(`An error happened with ${model}:`, error);
             });
         });
 
-        // Load camera position and rotation from localStorage
         function loadCameraPosition() {
             const cameraPosition = localStorage.getItem('cameraPosition');
             const cameraRotation = localStorage.getItem('cameraRotation');
@@ -82,11 +79,10 @@
                 camera.position.set(position.x, position.y, position.z);
                 camera.rotation.set(rotation._x, rotation._y, rotation._z);
             } else {
-                camera.position.z = 10; // Default position if no saved data
+                camera.position.z = 10;
             }
         }
 
-        // Save camera position and rotation to localStorage
         function saveCameraPosition() {
             const position = camera.position;
             const rotation = camera.rotation;
@@ -94,22 +90,18 @@
             localStorage.setItem('cameraRotation', JSON.stringify(rotation));
         }
 
-        // Load the camera position on page load
         loadCameraPosition();
-
-        // Save the camera position on page unload
         window.addEventListener('beforeunload', saveCameraPosition);
 
-        // Animation loop
         function animate() {
             requestAnimationFrame(animate);
-            controls.update(); // only required if controls.enableDamping = true, or if controls.autoRotate = true
+            controls.update();
+            if (mixer) mixer.update(0.01); // Update the mixer for animation
             renderer.render(scene, camera);
         }
 
         animate();
 
-        // Handle window resize
         window.addEventListener('resize', onWindowResize, false);
 
         function onWindowResize() {
@@ -118,19 +110,15 @@
             renderer.setSize(window.innerWidth, window.innerHeight);
         }
 
-        // Add event listener to enable TransformControls on selected objects
         window.addEventListener('click', (event) => {
-            // Convert mouse position to normalized device coordinates (-1 to +1) for both components
             const mouse = new THREE.Vector2(
                 (event.clientX / window.innerWidth) * 2 - 1,
                 -(event.clientY / window.innerHeight) * 2 + 1
             );
 
-            // Create a raycaster and set the camera and mouse position
             const raycaster = new THREE.Raycaster();
             raycaster.setFromCamera(mouse, camera);
 
-            // Calculate objects intersecting the ray
             const intersects = raycaster.intersectObjects(scene.children, true);
 
             if (intersects.length > 0) {
@@ -141,21 +129,19 @@
             }
         });
 
-        // Event listeners for TransformControls to enable OrbitControls only when not transforming
         transformControls.addEventListener('dragging-changed', function(event) {
             controls.enabled = !event.value;
         });
 
-        // Add keyboard event listeners to change mode of TransformControls
         window.addEventListener('keydown', function(event) {
             switch (event.key) {
-                case 'w': // Translate mode
+                case 'w':
                     transformControls.setMode('translate');
                     break;
-                case 'e': // Rotate mode
+                case 'e':
                     transformControls.setMode('rotate');
                     break;
-                case 'r': // Scale mode
+                case 'r':
                     transformControls.setMode('scale');
                     break;
             }
