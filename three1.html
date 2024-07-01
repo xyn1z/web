@@ -49,12 +49,11 @@
             { path: './model1.glb', position: { x: 0, y: 0, z: 25 }, scale: { x:20, y:20, z:20 }, rotation: { x:0,y:90,z:0} },
             { path: './model2.glb', position: { x: 0, y: 0, z: 0 }, scale: { x:1, y:1, z:1 }, rotation: { x:0,y:0,z:0} },
             { path: './model3.glb', position: { x: 20, y: 0, z: 25 }, scale: { x:20, y:20, z:20 }, rotation: { x:0,y:90,z:0} },
-            { path: './model4.glb', position: { x: 30, y: 10, z: 25 }, scale: { x:15, y:15, z:15 }, rotation: { x:0,y:90,z:0} }
+            { path: './model5.glb', position: { x: 30, y: 10, z: 25 }, scale: { x:15, y:15, z:15 }, rotation: { x:0,y:90,z:0} }
         ];
 
         let mixers = [];
         let actions = {};
-        let mixer;
 
         models.forEach(model => {
             loader.load(model.path, function(gltf) {
@@ -73,11 +72,16 @@
                 object.userData.draggable = true;
 
                 if (gltf.animations && gltf.animations.length) {
-                    mixer = new THREE.AnimationMixer(object);
+                    const mixer = new THREE.AnimationMixer(object);
+                    const modelActions = {};
                     gltf.animations.forEach(animation => {
-                        actions[animation.name] = mixer.clipAction(animation);
+                        const action = mixer.clipAction(animation);
+                        modelActions[animation.name] = action;
                     });
-                    mixers.push(mixer);
+                    mixers.push({ mixer, actions: modelActions });
+
+                    // 自动播放默认动画（假设动画数组的第一个是默认动画）
+                    modelActions[gltf.animations[0].name].play();
                 }
             }, undefined, function(error) {
                 console.error(`An error happened with ${model.path}:`, error);
@@ -111,7 +115,7 @@
             requestAnimationFrame(animate);
             controls.update();
             const delta = clock.getDelta();
-            mixers.forEach(mixer => mixer.update(delta)); // Update the mixers for animations
+            mixers.forEach(m => m.mixer.update(delta)); // Update the mixers for animations
             renderer.render(scene, camera);
         }
 
@@ -178,12 +182,13 @@
 
         // 定义播放动作的函数
         function playAction(actionName) {
-            if (mixer && actions[actionName]) {
-                Object.values(actions).forEach((action) => {
-                    action.stop(); // 停止所有动作
-                });
-                actions[actionName].reset().play(); // 重置并播放指定动作
-            }
+            mixers.forEach(({ mixer, actions }) => {
+                const action = actions[actionName];
+                if (action) {
+                    mixer.stopAllAction(); // 停止所有动作
+                    action.reset().play(); // 重置并播放指定动作
+                }
+            });
         }
     </script>
 </body>
