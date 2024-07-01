@@ -45,12 +45,15 @@
         scene.add(transformControls);
 
         const loader = new THREE.GLTFLoader();
-        const models = ['./model2.glb'];
+        const models = [
+            { path: './model1.glb', position: { x: 0, y: 0, z: 0 } },
+            { path: './model2.glb', position: { x: 2, y: 0, z: 0 } }
+        ];
 
-        let mixer;
         models.forEach(model => {
-            loader.load(model, function(gltf) {
+            loader.load(model.path, function(gltf) {
                 const object = gltf.scene;
+                object.position.set(model.position.x, model.position.y, model.position.z);
                 object.traverse(function(child) {
                     if (child.isMesh) {
                         child.castShadow = true;
@@ -58,15 +61,10 @@
                     }
                 });
                 scene.add(object);
-                console.log(`Loaded ${model}`);
+                console.log(`Loaded ${model.path}`);
                 object.userData.draggable = true;
-
-                mixer = new THREE.AnimationMixer(object);
-                gltf.animations.forEach(animation => {
-                    mixer.clipAction(animation).play();
-                });
             }, undefined, function(error) {
-                console.error(`An error happened with ${model}:`, error);
+                console.error(`An error happened with ${model.path}:`, error);
             });
         });
 
@@ -96,7 +94,6 @@
         function animate() {
             requestAnimationFrame(animate);
             controls.update();
-            if (mixer) mixer.update(0.01); // Update the mixer for animation
             renderer.render(scene, camera);
         }
 
