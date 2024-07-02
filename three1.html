@@ -11,8 +11,11 @@
             position: fixed;
             bottom: 10px;
             right: 10px;
-            display: flex;
-            flex-direction: column;
+            display: grid;
+            grid-template-areas:
+                ". up ."
+                "left . right"
+                ". down .";
         }
         .button {
             width: 50px;
@@ -25,6 +28,10 @@
             font-size: 24px;
             cursor: pointer;
         }
+        .button.up { grid-area: up; }
+        .button.left { grid-area: left; }
+        .button.down { grid-area: down; }
+        .button.right { grid-area: right; }
     </style>
 </head>
 <body>
@@ -64,22 +71,24 @@
 
         const loader = new THREE.GLTFLoader();
         const models = [
-            { path: './model1.glb', position: { x: 0, y: 0, z: 25 }, scale: { x:20, y:20, z:20 }, rotation: { x:0,y:90,z:0} },
-            { path: './model2.glb', position: { x: 0, y: 0, z: 0 }, scale: { x:1, y:1, z:1 }, rotation: { x:0,y:0,z:0} },
-            { path: './model3.glb', position: { x: 20, y: 0, z: 25 }, scale: { x:20, y:20, z:20 }, rotation: { x:0,y:90,z:0} },
-            { path: './model5.glb', position: { x: 30, y: 10, z: 25 }, scale: { x:15, y:15, z:15 }, rotation: { x:0,y:90,z:0} }
+            { path: './model1.glb', position: { x: 0, y: 0, z: 25 }, scale: { x: 20, y: 20, z: 20 }, rotation: { x: 0, y: 90, z: 0 } },
+            { path: './model2.glb', position: { x: 0, y: 0, z: 0 }, scale: { x: 1, y: 1, z: 1 }, rotation: { x: 0, y: 0, z: 0 } },
+            { path: './model3.glb', position: { x: 20, y: 0, z: 25 }, scale: { x: 20, y: 20, z: 20 }, rotation: { x: 0, y: 90, z: 0 } },
+            { path: './model5.glb', position: { x: 30, y: 10, z: 25 }, scale: { x: 15, y: 15, z: 15 }, rotation: { x: 0, y: 90, z: 0 } }
         ];
 
         let mixers = [];
         let actions = {};
+        let sharedSkeleton = null;
+        let sharedAnimations = [];
 
         models.forEach(model => {
-            loader.load(model.path, function(gltf) {
+            loader.load(model.path, function (gltf) {
                 const object = gltf.scene;
                 object.position.set(model.position.x, model.position.y, model.position.z);
                 object.scale.set(model.scale.x, model.scale.y, model.scale.z);
                 object.rotation.set(model.rotation.x, model.rotation.y, model.rotation.z);
-                object.traverse(function(child) {
+                object.traverse(function (child) {
                     if (child.isMesh) {
                         child.castShadow = true;
                         child.receiveShadow = true;
@@ -100,8 +109,20 @@
 
                     // 自动播放默认动画（假设动画数组的第一个是默认动画）
                     modelActions[gltf.animations[0].name].play();
+
+                    // 如果没有共享的骨架，设置共享骨架和动画
+                    if (!sharedSkeleton) {
+                        sharedSkeleton = object.skeleton;
+                        sharedAnimations = gltf.animations;
+                    } else if (object.skeleton && object.skeleton.equals(sharedSkeleton)) {
+                        // 共享动画
+                        sharedAnimations.forEach(animation => {
+                            const action = mixer.clipAction(animation);
+                            modelActions[animation.name] = action;
+                        });
+                    }
                 }
-            }, undefined, function(error) {
+            }, undefined, function (error) {
                 console.error(`An error happened with ${model.path}:`, error);
             });
         });
@@ -167,11 +188,11 @@
             }
         });
 
-        transformControls.addEventListener('dragging-changed', function(event) {
+        transformControls.addEventListener('dragging-changed', function (event) {
             controls.enabled = !event.value;
         });
 
-        window.addEventListener('keydown', function(event) {
+        window.addEventListener('keydown', function (event) {
             switch (event.key) {
                 case 'w':
                     transformControls.setMode('translate');
@@ -207,40 +228,36 @@
                 }
                 const action = actions[actionName];
                 if (action) {
-                    action.reset().fadeIn(0.5).play(); // 渐入播放指定动作
+                    action.reset().fadeIn(0.5).play();
                 }
             });
         }
 
-        // 检测是否为触屏设备
         function isTouchDevice() {
             return 'ontouchstart' in window || navigator.maxTouchPoints > 0;
         }
 
-        // 如果是触屏设备，则添加虚拟方向键
         if (isTouchDevice()) {
             const virtualButtons = document.createElement('div');
             virtualButtons.className = 'virtual-buttons';
 
             const buttonUp = document.createElement('div');
-            buttonUp.className = 'button';
+            buttonUp.className = 'button up';
             buttonUp.innerHTML = '↑';
             buttonUp.addEventListener('touchstart', () => playAction('Action1'));
 
             const buttonLeft = document.createElement('div');
-            buttonLeft.className = 'button';
+            buttonLeft.className = 'button left';
             buttonLeft.innerHTML = '←';
-            buttonLeft.addEventListener('touchstart', () => playAction('Action2'));
 
             const buttonDown = document.createElement('div');
-            buttonDown.className = 'button';
+            buttonDown.className = 'button down';
             buttonDown.innerHTML = '↓';
-            buttonDown.addEventListener('touchstart', () => playAction('Action3'));
+            buttonDown.addEventListener('touchstart', () => playAction('Action2'));
 
             const buttonRight = document.createElement('div');
-            buttonRight.className = 'button';
+            buttonRight.className = 'button right';
             buttonRight.innerHTML = '→';
-            buttonRight.addEventListener('touchstart', () => playAction('Action4'));
 
             virtualButtons.appendChild(buttonUp);
             virtualButtons.appendChild(buttonLeft);
