@@ -7,6 +7,24 @@
     <style>
         body { margin: 0; }
         canvas { display: block; }
+        .virtual-buttons {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            display: flex;
+            flex-direction: column;
+        }
+        .button {
+            width: 50px;
+            height: 50px;
+            margin: 5px;
+            background-color: rgba(0, 0, 0, 0.5);
+            color: white;
+            text-align: center;
+            line-height: 50px;
+            font-size: 24px;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
@@ -183,12 +201,53 @@
         // 定义播放动作的函数
         function playAction(actionName) {
             mixers.forEach(({ mixer, actions }) => {
+                const currentAction = mixer.existingAction(actionName);
+                if (currentAction) {
+                    currentAction.fadeOut(0.5);
+                }
                 const action = actions[actionName];
                 if (action) {
-                    mixer.stopAllAction(); // 停止所有动作
-                    action.reset().play(); // 重置并播放指定动作
+                    action.reset().fadeIn(0.5).play(); // 渐入播放指定动作
                 }
             });
+        }
+
+        // 检测是否为触屏设备
+        function isTouchDevice() {
+            return 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+        }
+
+        // 如果是触屏设备，则添加虚拟方向键
+        if (isTouchDevice()) {
+            const virtualButtons = document.createElement('div');
+            virtualButtons.className = 'virtual-buttons';
+
+            const buttonUp = document.createElement('div');
+            buttonUp.className = 'button';
+            buttonUp.innerHTML = '↑';
+            buttonUp.addEventListener('touchstart', () => playAction('Action1'));
+
+            const buttonLeft = document.createElement('div');
+            buttonLeft.className = 'button';
+            buttonLeft.innerHTML = '←';
+            buttonLeft.addEventListener('touchstart', () => playAction('Action2'));
+
+            const buttonDown = document.createElement('div');
+            buttonDown.className = 'button';
+            buttonDown.innerHTML = '↓';
+            buttonDown.addEventListener('touchstart', () => playAction('Action3'));
+
+            const buttonRight = document.createElement('div');
+            buttonRight.className = 'button';
+            buttonRight.innerHTML = '→';
+            buttonRight.addEventListener('touchstart', () => playAction('Action4'));
+
+            virtualButtons.appendChild(buttonUp);
+            virtualButtons.appendChild(buttonLeft);
+            virtualButtons.appendChild(buttonDown);
+            virtualButtons.appendChild(buttonRight);
+
+            document.body.appendChild(virtualButtons);
         }
     </script>
 </body>
