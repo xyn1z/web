@@ -251,6 +251,7 @@
             const buttonLeft = document.createElement('div');
             buttonLeft.className = 'button left';
             buttonLeft.innerHTML = '←';
+            buttonLeft.addEventListener('touchstart', () => playAction('Action1'));
 
             const buttonDown = document.createElement('div');
             buttonDown.className = 'button down';
@@ -260,6 +261,7 @@
             const buttonRight = document.createElement('div');
             buttonRight.className = 'button right';
             buttonRight.innerHTML = '→';
+            buttonRight.addEventListener('touchstart', () => playAction('Action2'));
 
             virtualButtons.appendChild(buttonUp);
             virtualButtons.appendChild(buttonLeft);
