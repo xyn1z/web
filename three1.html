@@ -79,10 +79,19 @@
 
         let mixers = [];
         let actions = {};
-        let sharedSkeleton = null;
         let sharedAnimations = [];
+        let sharedSkeleton = null;
 
-        models.forEach(model => {
+        function setupSharedAnimations(model) {
+            if (model.skeleton && sharedSkeleton && model.skeleton.equals(sharedSkeleton)) {
+                sharedAnimations.forEach(animation => {
+                    const action = mixer.clipAction(animation);
+                    modelActions[animation.name] = action;
+                });
+            }
+        }
+
+        models.forEach((model, index) => {
             loader.load(model.path, function (gltf) {
                 const object = gltf.scene;
                 object.position.set(model.position.x, model.position.y, model.position.z);
@@ -107,20 +116,15 @@
                     });
                     mixers.push({ mixer, actions: modelActions });
 
-                    // 自动播放默认动画（假设动画数组的第一个是默认动画）
-                    modelActions[gltf.animations[0].name].play();
-
-                    // 如果没有共享的骨架，设置共享骨架和动画
-                    if (!sharedSkeleton) {
+                    if (index === models.length - 1) { // 如果是最后加载的模型，即model5
                         sharedSkeleton = object.skeleton;
                         sharedAnimations = gltf.animations;
-                    } else if (object.skeleton && object.skeleton.equals(sharedSkeleton)) {
-                        // 共享动画
-                        sharedAnimations.forEach(animation => {
-                            const action = mixer.clipAction(animation);
-                            modelActions[animation.name] = action;
-                        });
+                    } else {
+                        setupSharedAnimations(object);
                     }
+
+                    // 自动播放默认动画（假设动画数组的第一个是默认动画）
+                    modelActions[gltf.animations[0].name].play();
                 }
             }, undefined, function (error) {
                 console.error(`An error happened with ${model.path}:`, error);
@@ -222,17 +226,15 @@
         // 定义播放动作的函数
         function playAction(actionName) {
             mixers.forEach(({ mixer, actions }) => {
-                const currentAction = mixer.existingAction(actionName);
-                if (currentAction) {
-                    currentAction.fadeOut(0.5);
-                }
                 const action = actions[actionName];
                 if (action) {
-                    action.reset().fadeIn(0.5).play();
+                    mixer.stopAllAction(); // 停止所有动作
+                    action.reset().play(); // 重置并播放指定动作
                 }
             });
         }
 
+        // 判断是否为触屏设备
         function isTouchDevice() {
             return 'ontouchstart' in window || navigator.maxTouchPoints > 0;
         }
