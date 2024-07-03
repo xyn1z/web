@@ -32,6 +32,19 @@
         .button.left { grid-area: left; }
         .button.down { grid-area: down; }
         .button.right { grid-area: right; }
+        .f11-button {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            width: 50px;
+            height: 50px;
+            background-color: rgba(0, 0, 0, 0.5);
+            color: white;
+            text-align: center;
+            line-height: 50px;
+            font-size: 24px;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
@@ -117,7 +130,7 @@
                 });
                 scene.add(object);
                 console.log(`Loaded ${model.path}`);
-                object.userData.draggable = true;
+                
 
                 if (gltf.animations && gltf.animations.length) {
                     const mixer = new THREE.AnimationMixer(object);
@@ -209,86 +222,45 @@
             }
         });
 
-        // 拖动事件监听
-        transformControls.addEventListener('dragging-changed', function (event) {
-            controls.enabled = !event.value;
-        });
+        // 拖动模型事件
+        window.addEventListener('dragover', function (event) {
+            event.preventDefault();
+        }, false);
 
-        // 键盘事件监听
-        window.addEventListener('keydown', function (event) {
-            switch (event.key) {
-                case 'w':
-                    transformControls.setMode('translate');
-                    break;
-                case 'e':
-                    transformControls.setMode('rotate');
-                    break;
-                case 'r':
-                    transformControls.setMode('scale');
-                    break;
+        window.addEventListener('drop', function (event) {
+            event.preventDefault();
+
+            const files = event.dataTransfer.files;
+            const reader = new FileReader();
+
+            reader.onload = function (event) {
+                const contents = event.target.result;
+                const loader = new THREE.GLTFLoader();
+                loader.parse(contents, '', function (gltf) {
+                    const object = gltf.scene;
+                    scene.add(object);
+                });
+            };
+
+            reader.readAsArrayBuffer(files[0]);
+        }, false);
+
+        // 创建虚拟 F11 按钮
+        const f11Button = document.createElement('div');
+        f11Button.className = 'f11-button';
+        f11Button.innerHTML = 'F11';
+        f11Button.addEventListener('click', toggleFullscreen);
+        document.body.appendChild(f11Button);
+
+        // 切换全屏模式
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(err => {
+                    alert(`Error attempting to enable full-screen mode: ${err.message} (${err.name})`);
+                });
+            } else {
+                document.exitFullscreen();
             }
-        });
-
-        // 按键事件监听器
-        document.addEventListener('keydown', (event) => {
-            switch (event.key) {
-                case '1':
-                    playAction('Action1');
-                    break;
-                case '2':
-                    playAction('Action2');
-                    break;
-                // 添加更多按键对应的动作
-            }
-        });
-
-        // 定义播放动作的函数
-        function playAction(actionName) {
-            mixers.forEach(({ mixer, actions }) => {
-                const action = actions[actionName];
-                if (action) {
-                    mixer.stopAllAction(); // 停止所有动作
-                    action.reset().play(); // 重置并播放指定动作
-                }
-            });
-        }
-
-        // 判断是否为触屏设备
-        function isTouchDevice() {
-            return 'ontouchstart' in window || navigator.maxTouchPoints > 0;
-        }
-
-        // 如果是触屏设备，添加虚拟按钮
-        if (isTouchDevice()) {
-            const virtualButtons = document.createElement('div');
-            virtualButtons.className = 'virtual-buttons';
-
-            const buttonUp = document.createElement('div');
-            buttonUp.className = 'button up';
-            buttonUp.innerHTML = '↑';
-            buttonUp.addEventListener('touchstart', () => playAction('Action1'));
-
-            const buttonLeft = document.createElement('div');
-            buttonLeft.className = 'button left';
-            buttonLeft.innerHTML = '←';
-            buttonLeft.addEventListener('touchstart', () => playAction('Action1'));
-
-            const buttonDown = document.createElement('div');
-            buttonDown.className = 'button down';
-            buttonDown.innerHTML = '↓';
-            buttonDown.addEventListener('touchstart', () => playAction('Action2'));
-
-            const buttonRight = document.createElement('div');
-            buttonRight.className = 'button right';
-            buttonRight.innerHTML = '→';
-            buttonRight.addEventListener('touchstart', () => playAction('Action2'));
-
-            virtualButtons.appendChild(buttonUp);
-            virtualButtons.appendChild(buttonLeft);
-            virtualButtons.appendChild(buttonDown);
-            virtualButtons.appendChild(buttonRight);
-
-            document.body.appendChild(virtualButtons);
         }
     </script>
 </body>
