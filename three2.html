@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<body>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/FBXLoader.js"></script>
+    <script>
+        // 创建场景
+        const scene = new THREE.Scene();
+        // 创建摄像机
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(0, 0, 15); //尝试设置摄影机初始位置 100，100，100.
+        // 创建渲染器，并设置抗锯齿
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
+
+        // 添加光源
+        const light = new THREE.DirectionalLight(0xffffff, 10);
+        light.position.set(0, 1, 1).normalize();
+        scene.add(light);
+
+
+        // 确保 FBXLoader 已被加载
+        // 因为 FBXLoader 在加载之后并不会自动添加到全局命名空间，所以需要手动添加
+        THREE.FBXLoader = FBXLoader;
+
+        // 加载并添加 FBX 模型到场景中
+        const loader = new THREE.FBXLoader();
+        loader.load('BodyBlock.fbx', function(object) {
+            scene.add(object);
+        }, undefined, function(error) {
+            console.error('An error happened', error);
+        });
+
+
+
+
+
+        //渲染循环
+        function animate() {
+	    requestAnimationFrame( animate );
+
+	    renderer.render( scene, camera );
+        }
+        animate();
+    </script>
+</body>
+</html>
