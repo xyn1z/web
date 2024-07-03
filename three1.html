@@ -46,6 +46,7 @@
         const scene = new THREE.Scene();
         // 创建摄像机
         const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(100, 100, 100); //尝试设置摄影机初始位置 100，100，100.
 
         // 创建渲染器，并设置抗锯齿
         const renderer = new THREE.WebGLRenderer({ antialias: true });
