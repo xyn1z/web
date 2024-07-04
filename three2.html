@@ -3,7 +3,7 @@
 
 <body>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/FBXLoader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
     <script>
         // 创建场景
         const scene = new THREE.Scene();
@@ -20,23 +20,24 @@
         light.position.set(0, 1, 1).normalize();
         scene.add(light);
 
+        // 加载GLTF模型
+        const loader = new THREE.GLTFLoader();
 
-        // 确保 FBXLoader 已被加载
-        // 因为 FBXLoader 在加载之后并不会自动添加到全局命名空间，所以需要手动添加
-        THREE.FBXLoader = FBXLoader;
+        loader.load( 'model1.glb', function ( gltf ) { 
+            scene.add( gltf.scene );
+            }, 
+            undefined, function ( error ) {
+	            console.error( error );
+            }
+         );
 
-        // 加载并添加 FBX 模型到场景中
-        const loader = new THREE.FBXLoader();
-        loader.load('BodyBlock.fbx', function(object) {
-            scene.add(object);
-        }, undefined, function(error) {
-            console.error('An error happened', error);
-        });
-
-
-
-
-
+          // 窗口大小调整事件
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+        
         //渲染循环
         function animate() {
 	    requestAnimationFrame( animate );
