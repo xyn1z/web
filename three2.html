@@ -18,7 +18,7 @@
 
         // 添加光源
         const light = new THREE.DirectionalLight(0xffffff, 10);
-        light.position.set(0, 2, 3);
+        light.position.set(0, 2, 5);
         scene.add(light);
 
         
@@ -26,6 +26,8 @@
         const loader = new THREE.GLTFLoader();
         let mixer;
         let actions = {};
+        let activeAction;
+        let previousAction;
 
         loader.load('model1.glb', function (gltf) {
             const model = gltf.scene;
@@ -34,7 +36,7 @@
             // 加载骨架动画
             loader.load('pi.glb', function (gltfSkeleton) {
                 const skeleton = gltfSkeleton.scene;
-                scene.add(skeleton);
+                //scene.add(skeleton);
                 mixer = new THREE.AnimationMixer(model);
                 // 设置骨架动画到模型1 新建一个AnimationMixer, 并取得AnimationClip实例列表
                 const clips = gltfSkeleton.animations;
@@ -45,10 +47,16 @@
                // 遍历所有动画片段并保存到actions对象中
                clips.forEach((clip) => {
                     actions[clip.name] = mixer.clipAction(clip);
-                    actions[clip.name].fadeIn(1).play().fadeout(1);
+                    previousAction = activeAction;
+                    activeAction = actions[clip.name];
+                    if (previousAction !== activeAction) {
+                        if (previousAction) {
+                            previousAction.fadeOut(0.5);
+                            }
+                        activeAction.reset().fadeIn(0.5).play();
+                    }
                 });
-                
-                })
+             })
         });
 
           // 窗口大小调整事件
