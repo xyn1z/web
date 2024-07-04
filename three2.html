@@ -31,20 +31,16 @@
             scene.add(model);
 
             // 加载骨架动画
-            loader.load('d1.glb', function (gltfSkeleton) {
+            loader.load('pi.glb', function (gltfSkeleton) {
                 const skeleton = gltfSkeleton.scene;
                 scene.add(skeleton);
+                mixer = new THREE.AnimationMixer(model);
+                // 设置骨架动画到模型1 新建一个AnimationMixer, 并取得AnimationClip实例列表
+                const clips = gltfSkeleton.animations;
+                clips.forEach((clip) => {
+                    mixer.clipAction(clip).play();
                 })
-            // 设置骨架动画到模型1 新建一个AnimationMixer, 并取得AnimationClip实例列表
-            mixer = new THREE.AnimationMixer(model);
-            const clips = gltf.animations;
-            clips.forEach((clip) => {
-                    mixer.clipAction(clip).play();
-                });
-            /*gltfSkeleton.animations.forEach((clip) => {
-                    mixer.clipAction(clip).play();
-                });*/
-
+                })
         });
 
           // 窗口大小调整事件
@@ -63,7 +59,7 @@
 
         // 在每一帧中更新mixer，加了一个判断避免为空时也更新导致报错
         if (mixer){
-            mixer.update(0.001);
+            mixer.update(0.01);
         }
         
 	    renderer.render( scene, camera );
