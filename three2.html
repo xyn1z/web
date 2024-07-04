@@ -24,10 +24,13 @@
         
         // 加载GLTF模型
         const loader = new THREE.GLTFLoader();
+        let clips;
         let mixer;
         let actions = {};
         let activeAction;
         let previousAction;
+        let currentIndex = 0;
+        const fadeDuration = 0.5; // 淡入淡出时间
 
         loader.load('model1.glb', function (gltf) {
             const model = gltf.scene;
@@ -39,7 +42,7 @@
                 //scene.add(skeleton);
                 mixer = new THREE.AnimationMixer(model);
                 // 设置骨架动画到模型1 新建一个AnimationMixer, 并取得AnimationClip实例列表
-                const clips = gltfSkeleton.animations;
+                clips = gltfSkeleton.animations;
                 /*clips.forEach((clip) => {
                     mixer.clipAction(clip).play();
                 })*/
@@ -47,17 +50,25 @@
                // 遍历所有动画片段并保存到actions对象中
                clips.forEach((clip) => {
                     actions[clip.name] = mixer.clipAction(clip);
-                    previousAction = activeAction;
-                    activeAction = actions[clip.name];
-                    if (previousAction !== activeAction) {
-                        if (previousAction) {
-                            previousAction.fadeOut(0.5);
-                            }
-                        activeAction.reset().fadeIn(0.5).play();
-                    }
                 });
+                // 开始播放第一个动画
+                playNextAction();
              })
         });
+
+        function playNextAction() {
+            previousAction = activeAction;
+            activeAction = actions[clips[currentIndex].name];
+
+            if (previousAction) {
+                previousAction.fadeOut(fadeDuration);
+            }
+            activeAction.reset().fadeIn(fadeDuration).play();
+
+            // 设置下一个动画的播放
+            currentIndex = (currentIndex + 1) % clips.length;
+            setTimeout(playNextAction, (clips[currentIndex].duration - fadeDuration) * 1000);
+        }
 
           // 窗口大小调整事件
         function onWindowResize() {
