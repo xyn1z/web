@@ -25,6 +25,7 @@
         // 加载GLTF模型
         const loader = new THREE.GLTFLoader();
         let mixer;
+        let actions = {};
 
         loader.load('model1.glb', function (gltf) {
             const model = gltf.scene;
@@ -37,9 +38,16 @@
                 mixer = new THREE.AnimationMixer(model);
                 // 设置骨架动画到模型1 新建一个AnimationMixer, 并取得AnimationClip实例列表
                 const clips = gltfSkeleton.animations;
-                clips.forEach((clip) => {
+                /*clips.forEach((clip) => {
                     mixer.clipAction(clip).play();
-                })
+                })*/
+
+               // 遍历所有动画片段并保存到actions对象中
+               clips.forEach((clip) => {
+                    actions[clip.name] = mixer.clipAction(clip);
+                    actions[clip.name].fadeIn(1).play().fadeout(1);
+                });
+                
                 })
         });
 
