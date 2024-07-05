@@ -66,8 +66,11 @@
             activeAction.reset().fadeIn(fadeDuration).play();
 
             // 设置下一个动画的播放
+            setTimeout(() => {
+                playNextAction();
+            }, (activeAction._clip.duration - fadeDuration) * 1000);
+
             currentIndex = (currentIndex + 1) % clips.length;
-            setTimeout(playNextAction, (clips[currentIndex].duration - fadeDuration) * 1000);
         }
 
           // 窗口大小调整事件
