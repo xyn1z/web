@@ -24,54 +24,64 @@
         
         // 加载GLTF模型
         const loader = new THREE.GLTFLoader();
-        let clips;
-        let mixer;
-        let actions = {};
-        let activeAction;
-        let previousAction;
-        let currentIndex = 0;
-        const fadeDuration = 0.5; // 淡入淡出时间
+        const models = [
+        { path: './model1.glb', position: { x: 3, y: 1, z: 1 }, scale: { x: 20, y: 20, z: 20 }, rotation: { x: 0, y: 90, z: 0 } },
+        { path: './model6.glb', position: { x: 1, y: 1, z: 1 }, scale: { x: 1, y: 1, z: 1 }, rotation: { x: 0, y: 0, z: 0 } }
+        ];
+        
+        const mixers = []; // 保存每个模型的mixer
+        
+        models.forEach((model, index) => {
+            loader.load(model.path, function (gltf) {
+                const object = gltf.scene;
+                object.position.set(model.position.x, model.position.y, model.position.z);
+                scene.add(object);
 
-        loader.load('model1.glb', function (gltf) {
-            const model = gltf.scene;
-            scene.add(model);
-
-            // 加载骨架动画
-            loader.load('pi.glb', function (gltfSkeleton) {
+                // 加载骨架动画
+                loader.load('pi.glb', function (gltfSkeleton) {
                 const skeleton = gltfSkeleton.scene;
                 //scene.add(skeleton);
-                mixer = new THREE.AnimationMixer(model);
+                const mixer = new THREE.AnimationMixer(object); // 为每个模型创建一个mixer
+                mixers.push(mixer); // 保存mixer到数组中
                 // 设置骨架动画到模型1 新建一个AnimationMixer, 并取得AnimationClip实例列表
-                clips = gltfSkeleton.animations;
-                /*clips.forEach((clip) => {
-                    mixer.clipAction(clip).play();
-                })*/
+                const clips = gltfSkeleton.animations;
+                const actions = {};
+                let activeAction;
+                let previousAction;
+                let currentIndex = 0;
+                const fadeDuration = 0.5; // 淡入淡出时间
+                
 
                // 遍历所有动画片段并保存到actions对象中
                clips.forEach((clip) => {
                     actions[clip.name] = mixer.clipAction(clip);
                 });
+                function playNextAction() {
+                    previousAction = activeAction;
+                    activeAction = actions[clips[currentIndex].name];
+
+                    if (previousAction) {
+                        previousAction.fadeOut(fadeDuration);
+                    }
+                    activeAction.reset().fadeIn(fadeDuration).play();
+
+                    // 使用 activeAction._clip.duration 来获取当前动画片段的持续时间，并在 setTimeout 回调中调用 playNextAction。
+                    setTimeout(() => {
+                    playNextAction();
+                    },
+                    (activeAction._clip.duration - fadeDuration) * 1000);
+
+                    currentIndex = (currentIndex + 1) % clips.length;
+                    }
                 // 开始播放第一个动画
                 playNextAction();
              })
+            });
+            
+                
         });
 
-        function playNextAction() {
-            previousAction = activeAction;
-            activeAction = actions[clips[currentIndex].name];
-
-            if (previousAction) {
-                previousAction.fadeOut(fadeDuration);
-            }
-            activeAction.reset().fadeIn(fadeDuration).play();
-
-            // 使用 activeAction._clip.duration 来获取当前动画片段的持续时间，并在 setTimeout 回调中调用 playNextAction。
-            setTimeout(() => {
-                playNextAction();
-            }, (activeAction._clip.duration - fadeDuration) * 1000);
-
-            currentIndex = (currentIndex + 1) % clips.length;
-        }
+        
 
           // 窗口大小调整事件
         function onWindowResize() {
@@ -87,10 +97,10 @@
         function animate() {
 	    requestAnimationFrame( animate );
 
-        // 在每一帧中更新mixer，加了一个判断避免为空时也更新导致报错
-        if (mixer){
-            mixer.update(0.01);
-        }
+        // 在每一帧中更新所有的mixer
+            mixers.forEach((mixer) => {
+                mixer.update(0.01);
+            });
         
 	    renderer.render( scene, camera );
         }
