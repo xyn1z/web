@@ -1,164 +1,121 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Three.js Custom Models with Antialiasing</title>
-    <style>
-        body { margin: 0; }
-        canvas { display: block; }
-    </style>
-</head>
+
 <body>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/TransformControls.js"></script>
     <script>
-        const antialiasLevel = 2;
+        // 创建场景
         const scene = new THREE.Scene();
-        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        // 创建默认摄像机（备用）
+        const defaultCamera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        defaultCamera.position.set(2, 5, 115); // 设置默认摄像机初始位置
+        let camera = defaultCamera; // 初始化摄像机
 
+        // 创建渲染器，并设置抗锯齿
         const renderer = new THREE.WebGLRenderer({ antialias: true });
-        renderer.setPixelRatio(window.devicePixelRatio * antialiasLevel);
         renderer.setSize(window.innerWidth, window.innerHeight);
-
-        renderer.gammaFactor = 2.2;
-        renderer.outputEncoding = THREE.sRGBEncoding;
-        renderer.shadowMap.enabled = true;
-
         document.body.appendChild(renderer.domElement);
 
-        const light = new THREE.DirectionalLight(0xee8888, 10);
-        light.position.set(5, 10, 7.5);
-        light.castShadow = true;
-        scene.add(light);
+        // 添加光源（备用）
+        const defaultLight = new THREE.DirectionalLight(0xffffff, 3);
+        defaultLight.position.set(0, 2, 5);
+        scene.add(defaultLight);
 
-        const ambientLight = new THREE.AmbientLight(0x101000);
-        scene.add(ambientLight);
+        // 添加鼠标控制
+        let controls = new THREE.OrbitControls(camera, renderer.domElement);
 
-        const controls = new THREE.OrbitControls(camera, renderer.domElement);
-        controls.enableDamping = true;
-        controls.dampingFactor = 0.05;
-
-        const transformControls = new THREE.TransformControls(camera, renderer.domElement);
-        scene.add(transformControls);
-
+        // 加载GLTF模型
         const loader = new THREE.GLTFLoader();
         const models = [
-            { path: './model1.glb', position: { x: 0, y: 0, z: 25 }, scale: { x:20, y:20, z:20 }, rotation: { x:0,y:90,z:0} },
-            { path: './model2.glb', position: { x: 0, y: 0, z: 0 }, scale: { x:1, y:1, z:1 }, rotation: { x:0,y:0,z:0} },
-            { path: './model3.glb', position: { x: 20, y: 0, z: 25 }, scale: { x:20, y:20, z:20 }, rotation: { x:0,y:90,z:0} },
-            { path: './model4.glb', position: { x: 30, y: 10, z: 25 }, scale: { x:15, y:15, z:15 }, rotation: { x:0,y:90,z:0} }
+            { path: './model1.glb', position: { x: 3, y: 1, z: 1 }, scale: { x: 20, y: 20, z: 20 }, rotation: { x: 0, y: 90, z: 0 }, animationName: 'Walk' },
+            { path: './model6.glb', position: { x: 1, y: 1, z: 1 }, scale: { x: 1, y: 1, z: 1 }, rotation: { x: 0, y: 0, z: 0 }, animationName: 'Run' },
+            { path: './mainModel.glb', position: { x: 2, y: 1, z: 1 }, scale: { x: 1, y: 1, z: 1 }, rotation: { x: 0, y: 0, z: 0 } }
         ];
+        const mixers = []; // 保存每个模型的mixer
 
-        let mixers = [];
-        models.forEach(model => {
-            loader.load(model.path, function(gltf) {
+        models.forEach((model, index) => {
+            loader.load(model.path, function (gltf) {
                 const object = gltf.scene;
                 object.position.set(model.position.x, model.position.y, model.position.z);
-                object.scale.set(model.scale.x, model.scale.y, model.scale.z);
-                object.rotation.set(model.rotation.x, model.rotation.y, model.rotation.z);
-                object.traverse(function(child) {
-                    if (child.isMesh) {
-                        child.castShadow = true;
-                        child.receiveShadow = true;
+                // object.scale.set(model.scale.x, model.scale.y, model.scale.z);
+                // object.rotation.set(THREE.Math.degToRad(model.rotation.x), THREE.Math.degToRad(model.rotation.y), THREE.Math.degToRad(model.rotation.z));
+                scene.add(object);
+
+                // 查找并设置摄像机
+                gltf.scene.traverse(function (child) {
+                    if (child.isCamera) {
+                        camera = child;
+                        controls.dispose(); // 销毁旧的控件
+                        controls = new THREE.OrbitControls(camera, renderer.domElement); // 绑定新的控件
+                        camera.aspect = window.innerWidth / window.innerHeight;
+                        camera.updateProjectionMatrix();
+                    }
+                    if (child.isLight) {
+                        scene.add(child);
                     }
                 });
-                scene.add(object);
-                console.log(`Loaded ${model.path}`);
-                object.userData.draggable = true;
 
-                if (gltf.animations && gltf.animations.length) {
-                    const mixer = new THREE.AnimationMixer(object);
-                    gltf.animations.forEach(animation => {
-                        mixer.clipAction(animation).play();
+                // 加载骨架动画
+                loader.load('pi.glb', function (gltfSkeleton) {
+                    const skeleton = gltfSkeleton.scene;
+                    const mixer = new THREE.AnimationMixer(object); // 为每个模型创建一个mixer
+                    mixers.push(mixer); // 保存mixer到数组中
+                    const clips = gltfSkeleton.animations;
+                    const actions = {};
+                    let activeAction;
+                    let previousAction;
+                    let currentIndex = 0;
+                    const fadeDuration = 0.5; // 淡入淡出时间
+
+                    // 遍历所有动画片段并保存到actions对象中
+                    clips.forEach((clip) => {
+                        actions[clip.name] = mixer.clipAction(clip);
                     });
-                    mixers.push(mixer);
-                }
-            }, undefined, function(error) {
-                console.error(`An error happened with ${model.path}:`, error);
+
+                    function playNextAction() {
+                        previousAction = activeAction;
+                        activeAction = actions[clips[currentIndex].name];
+
+                        if (previousAction) {
+                            previousAction.fadeOut(fadeDuration);
+                        }
+                        activeAction.reset().fadeIn(fadeDuration).play();
+
+                        setTimeout(() => {
+                            playNextAction();
+                        }, (activeAction._clip.duration - fadeDuration) * 1000);
+
+                        currentIndex = (currentIndex + 1) % clips.length;
+                    }
+
+                    // 开始播放第一个动画
+                    playNextAction();
+                });
             });
         });
 
-        function loadCameraPosition() {
-            const cameraPosition = localStorage.getItem('cameraPosition');
-            const cameraRotation = localStorage.getItem('cameraRotation');
-            if (cameraPosition && cameraRotation) {
-                const position = JSON.parse(cameraPosition);
-                const rotation = JSON.parse(cameraRotation);
-                camera.position.set(position.x, position.y, position.z);
-                camera.rotation.set(rotation._x, rotation._y, rotation._z);
-            } else {
-                camera.position.z = 10;
-            }
+        // 窗口大小调整事件
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();    
+            renderer.setSize(window.innerWidth, window.innerHeight);
         }
-
-        function saveCameraPosition() {
-            const position = camera.position;
-            const rotation = camera.rotation;
-            localStorage.setItem('cameraPosition', JSON.stringify(position));
-            localStorage.setItem('cameraRotation', JSON.stringify(rotation));
-        }
-
-        loadCameraPosition();
-        window.addEventListener('beforeunload', saveCameraPosition);
+        window.addEventListener('resize', onWindowResize, false);
 
         function animate() {
             requestAnimationFrame(animate);
-            controls.update();
-            const delta = clock.getDelta();
-            mixers.forEach(mixer => mixer.update(delta)); // Update the mixers for animations
+
+            // 在每一帧中更新所有的mixer
+            mixers.forEach((mixer) => {
+                mixer.update(0.01);
+            });
+
+            controls.update(); // 更新控件状态
             renderer.render(scene, camera);
         }
-
-        const clock = new THREE.Clock();
         animate();
-
-        window.addEventListener('resize', onWindowResize, false);
-
-        function onWindowResize() {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-        }
-
-        window.addEventListener('click', (event) => {
-            const mouse = new THREE.Vector2(
-                (event.clientX / window.innerWidth) * 2 - 1,
-                -(event.clientY / window.innerHeight) * 2 + 1
-            );
-
-            const raycaster = new THREE.Raycaster();
-            raycaster.setFromCamera(mouse, camera);
-
-            const intersects = raycaster.intersectObjects(scene.children, true);
-
-            if (intersects.length > 0) {
-                const selectedObject = intersects[0].object;
-                if (selectedObject.userData.draggable) {
-                    transformControls.attach(selectedObject);
-                }
-            }
-        });
-
-        transformControls.addEventListener('dragging-changed', function(event) {
-            controls.enabled = !event.value;
-        });
-
-        window.addEventListener('keydown', function(event) {
-            switch (event.key) {
-                case 'w':
-                    transformControls.setMode('translate');
-                    break;
-                case 'e':
-                    transformControls.setMode('rotate');
-                    break;
-                case 'r':
-                    transformControls.setMode('scale');
-                    break;
-            }
-        });
     </script>
 </body>
 </html>
