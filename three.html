@@ -10,10 +10,10 @@
         const scene = new THREE.Scene();
 
         // 创建两个摄像机
-        const camera1 = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const camera1 = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 10000);
         camera1.position.set(2, 5, 115); // 设置第一个摄像机初始位置
 
-        const camera2 = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const camera2 = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 10000);
         camera2.position.set(10, 10, 10); // 设置第二个摄像机初始位置
 
         let camera = camera1; // 初始化为第一个摄像机
@@ -38,7 +38,8 @@
         const loader = new THREE.GLTFLoader();
         const models = [
             { path: './model1.glb', position: { x: 3, y: 1, z: 1 }, scale: { x: 20, y: 20, z: 20 }, rotation: { x: 0, y: 90, z: 0 }, animationName: 'Walk' },
-            { path: './model6.glb', position: { x: 1, y: 1, z: 1 }, scale: { x: 1, y: 1, z: 1 }, rotation: { x: 0, y: 0, z: 0 }, animationName: 'Run' },
+            { path: './model6.glb', position: { x: 5, y: 1, z: 1 }, scale: { x: 1, y: 1, z: 1 }, rotation: { x: 0, y: 0, z: 0 }, animationName: 'Run' },
+            { path: './model7.glb', position: { x: 7, y: 1, z: 1 }, scale: { x: 1, y: 1, z: 1 }, rotation: { x: 0, y: 0, z: 0 } },
             { path: './mainModel.glb', position: { x: 2, y: 1, z: 1 }, scale: { x: 1, y: 1, z: 1 }, rotation: { x: 0, y: 0, z: 0 } }
         ];
         const mixers = []; // 保存每个模型的mixer
