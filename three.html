@@ -2,6 +2,13 @@
 <html lang="en">
 
 <body>
+    <!-- Add a button to start playback -->
+    <button id="playButton">Play Audio</button>
+     <!-- Add an audio element for the M4A file -->
+    <audio id="bgAudio" loop>
+        <source src="Wagner Overture.m4a" type="audio/mp4">
+        Your browser does not support the audio element.
+    </audio>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
@@ -143,6 +150,16 @@
             renderer.render(scene, camera);
         }
         animate();
+
+        // Get references to the audio element and play button
+        const bgAudio = document.getElementById('bgAudio');
+        const playButton = document.getElementById('playButton');
+
+        // Add event listener to play button to start audio playback
+        playButton.addEventListener('click', function() {
+            bgAudio.play(); // Start audio playback
+            playButton.style.display = 'none'; // Hide the play button after starting playback
+        });
     </script>
 </body>
 </html>
