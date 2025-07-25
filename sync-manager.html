@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pages 同步管理器</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            color: white;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.15);
+        }
+
+        .platform-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+
+        .platform-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            margin-right: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            font-weight: bold;
+            color: white;
+        }
+
+        .cloudflare-icon {
+            background: linear-gradient(135deg, #f38020, #f56500);
+        }
+
+        .github-icon {
+            background: linear-gradient(135deg, #24292e, #586069);
+        }
+
+        .platform-title {
+            font-size: 1.4rem;
+            font-weight: 600;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+            padding: 15px;
+            border-radius: 10px;
+            background: rgba(76, 175, 80, 0.1);
+            border-left: 4px solid #4caf50;
+        }
+
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #4caf50;
+            margin-right: 10px;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #555;
+        }
+
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e1e5e9;
+            border-radius: 10px;
+            font-size: 14px;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-group input:focus, .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .sync-controls {
+            grid-column: 1 / -1;
+            text-align: center;
+        }
+
+        .sync-button {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            border-radius: 50px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 0 10px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .sync-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+        }
+
+        .sync-button:active {
+            transform: translateY(0);
+        }
+
+        .sync-button.syncing {
+            background: #ffa726;
+            cursor: not-allowed;
+        }
+
+        .sync-button.syncing::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 20px;
+            height: 20px;
+            border: 2px solid transparent;
+            border-top: 2px solid white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: translate(-50%, -50%) rotate(0deg); }
+            100% { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+
+        .log-section {
+            grid-column: 1 / -1;
+            margin-top: 20px;
+        }
+
+        .log-container {
+            background: #1a1a1a;
+            color: #00ff41;
+            padding: 20px;
+            border-radius: 15px;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid #333;
+        }
+
+        .log-entry {
+            margin-bottom: 5px;
+            opacity: 0;
+            animation: fadeIn 0.5s ease forwards;
+        }
+
+        @keyframes fadeIn {
+            to { opacity: 1; }
+        }
+
+        .timestamp {
+            color: #888;
+            margin-right: 10px;
+        }
+
+        .success { color: #4caf50; }
+        .error { color: #f44336; }
+        .warning { color: #ff9800; }
+        .info { color: #2196f3; }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.9);
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        @media (max-width: 768px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .card {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 Pages 同步管理器</h1>
+            <p>统一管理 Cloudflare Pages 和 GitHub Pages 的部署同步</p>
+        </div>
+
+        <div class="main-grid">
+            <!-- Cloudflare Pages 配置 -->
+            <div class="card">
+                <div class="platform-header">
+                    <div class="platform-icon cloudflare-icon">CF</div>
+                    <div class="platform-title">Cloudflare Pages</div>
+                </div>
+                
+                <div class="status-indicator">
+                    <div class="status-dot"></div>
+                    <span>状态: 已连接</span>
+                </div>
+
+                <div class="form-group">
+                    <label>API Token</label>
+                    <input type="password" id="cf-token" placeholder="输入 Cloudflare API Token">
+                </div>
+
+                <div class="form-group">
+                    <label>Account ID</label>
+                    <input type="text" id="cf-account" placeholder="Account ID">
+                </div>
+
+                <div class="form-group">
+                    <label>项目名称</label>
+                    <input type="text" id="cf-project" placeholder="项目名称">
+                </div>
+
+                <div class="form-group">
+                    <label>分支</label>
+                    <select id="cf-branch">
+                        <option value="main">main</option>
+                        <option value="master">master</option>
+                        <option value="production">production</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- GitHub Pages 配置 -->
+            <div class="card">
+                <div class="platform-header">
+                    <div class="platform-icon github-icon">GH</div>
+                    <div class="platform-title">GitHub Pages</div>
+                </div>
+                
+                <div class="status-indicator">
+                    <div class="status-dot"></div>
+                    <span>状态: 已连接</span>
+                </div>
+
+                <div class="form-group">
+                    <label>GitHub Token</label>
+                    <input type="password" id="gh-token" placeholder="输入 GitHub Personal Access Token">
+                </div>
+
+                <div class="form-group">
+                    <label>仓库</label>
+                    <input type="text" id="gh-repo" placeholder="username/repository">
+                </div>
+
+                <div class="form-group">
+                    <label>Pages 分支</label>
+                    <select id="gh-branch">
+                        <option value="gh-pages">gh-pages</option>
+                        <option value="main">main</option>
+                        <option value="master">master</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>部署路径</label>
+                    <input type="text" id="gh-path" placeholder="/ (根目录)" value="/">
+                </div>
+            </div>
+
+            <!-- 同步控制 -->
+            <div class="card sync-controls">
+                <h3 style="margin-bottom: 20px;">同步操作</h3>
+                <button class="sync-button" onclick="syncToCloudflare()">
+                    同步到 Cloudflare
+                </button>
+                <button class="sync-button" onclick="syncToGitHub()">
+                    同步到 GitHub
+                </button>
+                <button class="sync-button" onclick="bidirectionalSync()">
+                    双向同步
+                </button>
+            </div>
+
+            <!-- 操作日志 -->
+            <div class="card log-section">
+                <h3 style="margin-bottom: 15px;">操作日志</h3>
+                <div class="log-container" id="log-container">
+                    <div class="log-entry info">
+                        <span class="timestamp">[2025-07-25 14:30:15]</span>
+                        <span>系统初始化完成</span>
+                    </div>
+                    <div class="log-entry success">
+                        <span class="timestamp">[2025-07-25 14:30:16]</span>
+                        <span>API 连接测试成功</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 统计信息 -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-number" id="sync-count">12</div>
+                <div class="stat-label">总同步次数</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="success-rate">98%</div>
+                <div class="stat-label">成功率</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="last-sync">2分钟前</div>
+                <div class="stat-label">最后同步</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="file-count">247</div>
+                <div class="stat-label">同步文件数</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 模拟同步状态
+        let syncCount = 12;
+        let issyncing = false;
+
+        // 添加日志条目
+        function addLog(message, type = 'info') {
+            const logContainer = document.getElementById('log-container');
+            const timestamp = new Date().toLocaleString('zh-CN');
+            const logEntry = document.createElement('div');
+            logEntry.className = `log-entry ${type}`;
+            logEntry.innerHTML = `
+                <span class="timestamp">[${timestamp}]</span>
+                <span>${message}</span>
+            `;
+            
+            logContainer.appendChild(logEntry);
+            logContainer.scrollTop = logContainer.scrollHeight;
+            
+            // 限制日志条目数量
+            const entries = logContainer.getElementsByClassName('log-entry');
+            if (entries.length > 50) {
+                logContainer.removeChild(entries[0]);
+            }
+        }
+
+        // 模拟同步过程
+        async function simulateSync(platform, duration = 3000) {
+            if (issyncing) {
+                addLog('同步正在进行中，请稍候...', 'warning');
+                return;
+            }
+
+            issyncing = true;
+            const buttons = document.querySelectorAll('.sync-button');
+            buttons.forEach(btn => {
+                btn.classList.add('syncing');
+                btn.disabled = true;
+            });
+
+            addLog(`开始同步到 ${platform}...`, 'info');
+            
+            // 模拟同步步骤
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            addLog(`正在检查 ${platform} 连接状态...`, 'info');
+            
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            addLog(`正在上传文件到 ${platform}...`, 'info');
+            
+            await new Promise(resolve => setTimeout(resolve, duration - 2000));
+            
+            // 模拟成功/失败
+            const success = Math.random() > 0.1; // 90% 成功率
+            
+            if (success) {
+                addLog(`✅ ${platform} 同步完成！`, 'success');
+                syncCount++;
+                document.getElementById('sync-count').textContent = syncCount;
+                document.getElementById('last-sync').textContent = '刚刚';
+            } else {
+                addLog(`❌ ${platform} 同步失败，请检查配置`, 'error');
+            }
+
+            issyncing = false;
+            buttons.forEach(btn => {
+                btn.classList.remove('syncing');
+                btn.disabled = false;
+            });
+        }
+
+        // 同步函数
+        async function syncToCloudflare() {
+            await simulateSync('Cloudflare Pages');
+        }
+
+        async function syncToGitHub() {
+            await simulateSync('GitHub Pages');
+        }
+
+        async function bidirectionalSync() {
+            if (issyncing) {
+                addLog('同步正在进行中，请稍候...', 'warning');
+                return;
+            }
+
+            addLog('开始双向同步...', 'info');
+            await simulateSync('Cloudflare Pages', 2000);
+            await new Promise(resolve => setTimeout(resolve, 500));
+            await simulateSync('GitHub Pages', 2000);
+            addLog('✅ 双向同步完成！', 'success');
+        }
+
+        // 表单验证
+        function validateForm() {
+            const cfToken = document.getElementById('cf-token').value;
+            const ghToken = document.getElementById('gh-token').value;
+            const cfProject = document.getElementById('cf-project').value;
+            const ghRepo = document.getElementById('gh-repo').value;
+
+            if (!cfToken || !ghToken || !cfProject || !ghRepo) {
+                addLog('⚠️ 请填写完整的配置信息', 'warning');
+                return false;
+            }
+            return true;
+        }
+
+        // 自动保存配置
+        function saveConfig() {
+            const config = {
+                cfToken: document.getElementById('cf-token').value,
+                cfAccount: document.getElementById('cf-account').value,
+                cfProject: document.getElementById('cf-project').value,
+                cfBranch: document.getElementById('cf-branch').value,
+                ghToken: document.getElementById('gh-token').value,
+                ghRepo: document.getElementById('gh-repo').value,
+                ghBranch: document.getElementById('gh-branch').value,
+                ghPath: document.getElementById('gh-path').value
+            };
+            
+            // 这里可以保存到后端或本地存储
+            console.log('配置已保存:', config);
+        }
+
+        // 监听表单变化
+        document.querySelectorAll('input, select').forEach(element => {
+            element.addEventListener('change', saveConfig);
+        });
+
+        // 定时更新统计信息
+        setInterval(() => {
+            const lastSyncElement = document.getElementById('last-sync');
+            const currentText = lastSyncElement.textContent;
+            
+            if (currentText !== '刚刚') {
+                const timeUnits = ['1分钟前', '2分钟前', '5分钟前', '10分钟前', '30分钟前', '1小时前'];
+                const currentIndex = timeUnits.indexOf(currentText);
+                if (currentIndex < timeUnits.length - 1) {
+                    lastSyncElement.textContent = timeUnits[currentIndex + 1];
+                }
+            }
+        }, 60000); // 每分钟更新一次
+
+        // 初始化欢迎信息
+        setTimeout(() => {
+            addLog('欢迎使用 Pages 同步管理器！', 'success');
+            addLog('请配置您的 API 令牌开始使用', 'info');
+        }, 1000);
+    </script>
+</body>
+</html>
